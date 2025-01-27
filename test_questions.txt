@@ -1,0 +1,8 @@
+1. Question: According to Photo-Realistic Monocular Gaze Redirection Using Generative Adversarial Networks.pdf, what specific advantages does the GAN-based approach offer over traditional warping methods for large gaze redirection angles?
+1. Answer: The GAN-based approach generates photo-realistic images even for large redirection angles, particularly in cases of large dis-occlusions (e.g., eyelids covering parts of the eyeball). Unlike warping methods that minimize pixel-wise differences, GANs ensure perceptual plausibility through adversarial training and geometric regularization.
+
+2. According to Photo-Realistic Monocular Gaze Redirection Using Generative Adversarial Networks.pdf, which two consistency losses are combined with adversarial training to ensure both perceptual quality and geometric accuracy?
+2. Answer: The method combines perceptual consistency loss (for perceptual similarity to real images) and cycle consistency loss (to preserve input details during redirection) with adversarial training.
+
+3. According to Photo-Realistic Monocular Gaze Redirection Using Generative Adversarial Networks.pdf, how could this method improve the performance of gaze estimation systems in practical applications?
+3. Answer: It enables dataset augmentation by synthesizing high-fidelity training data with diverse gaze angles, overcoming limitations of real-world datasets that often have restricted gaze angle coverage.
