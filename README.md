@@ -2,7 +2,7 @@
 
 **Advanced PDF processing system leveraging Google DocAI and OpenAI GPT-4 for structured data extraction and natural language Q&A**
 
-![Document Processing Interface](ui_screenshot.png) <!-- Add actual screenshot file -->
+![UI Preview](https://raw.githubusercontent.com/NL-Specialist/DocAI/main/docs/assets/ui_screenshot.png)
 
 ## 🚀 Key Features
 - **Smart Document Processing**  
