@@ -12,7 +12,7 @@
 - **Smart Document Processing**  
   Advanced OCR with Google DocAI handles scanned PDFs and variable formats
 - **AI-Powered Insights**  
-  GPT-4 integration for natural language query resolution on extracted data
+  GPT-4 or Deepseek integration for natural language query resolution on extracted data
 - **Adaptive Processing**  
   Custom parser configurations for consistent public record formats
 - **Cloud-Optimized**  
