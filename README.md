@@ -5,7 +5,7 @@
 ![Demonstration Recording](https://raw.githubusercontent.com/NL-Specialist/DocAI/main/demo_recording.mp4)
 
 **Advanced PDF processing system leveraging Google DocAI, Ollama and Deepseek 32B (free) / OpenAI (API costs) for structured data extraction and natural language Q&A**
-![UI Preview](https://raw.githubusercontent.com/NL-Specialist/DocAI/main/ui_screenshot.png)
+![UI Preview](https://raw.githubusercontent.com/NL-Specialist/DocAI/main/ui_screenshot2.png)
 
 
 ## 🚀 Key Features
