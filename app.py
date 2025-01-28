@@ -1,142 +1,89 @@
-import tkinter as tk
-from tkinter import ttk, filedialog, scrolledtext
-import threading
-import queue
+import streamlit as st
+import tempfile
+import os
 from modules.docai_processor import process_pdf
 from modules.openai_handler import ask_question
 
-class PDFAnalyzerApp:
-    def __init__(self, master):
-        self.master = master
-        master.title("PDF Analyzer Pro")
-        master.geometry("800x600")
+# Initialize session state
+if 'uploaded_file' not in st.session_state:
+    st.session_state.uploaded_file = None
+if 'qa_list' not in st.session_state:
+    st.session_state.qa_list = []
 
-        # Create widgets
-        self.create_widgets()
+def main():
+    st.set_page_config(page_title="PDF Analyzer Pro", layout="wide")
+    st.title("📄 PDF Analyzer Pro")
+    st.markdown("Upload a PDF document and ask questions about its content")
 
-        # Queue for thread-safe GUI updates
-        self.queue = queue.Queue()
-        self.check_queue()
+    # File upload section
+    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+    if uploaded_file is not None:
+        st.session_state.uploaded_file = uploaded_file.read()
+        st.success("PDF uploaded successfully!")
 
-    def create_widgets(self):
-        # Header
-        header = ttk.Label(self.master, text="📄 PDF Analyzer Pro", 
-                         font=('Helvetica', 16, 'bold'))
-        header.pack(pady=10)
+    # Question input and analyze button
+    question = st.text_input("What would you like to know about the document?", "")
+    analyze_clicked = st.button("Analyze")
 
-        ttk.Label(self.master, 
-                text="Upload a PDF document and ask questions about its content").pack()
+    if analyze_clicked:
+        handle_analysis(question)
 
-        # File Upload Section
-        file_frame = ttk.Frame(self.master)
-        file_frame.pack(pady=10, fill='x', padx=20)
-        
-        self.upload_btn = ttk.Button(file_frame, text="Upload PDF", 
-                                   command=self.upload_pdf)
-        self.upload_btn.pack(side='left')
-        self.file_label = ttk.Label(file_frame, text="No file selected")
-        self.file_label.pack(side='left', padx=10)
+    # Display analysis history
+    display_history()
 
-        # Question Input
-        self.question_input = ttk.Entry(self.master)
-        self.question_input.pack(pady=10, fill='x', padx=20)
-        self.question_input.insert(0, "What would you like to know about the document?")
-
-        # Analyze Button
-        self.analyze_btn = ttk.Button(self.master, text="Analyze", 
-                                    command=self.start_processing)
-        self.analyze_btn.pack(pady=10)
-
-        # Progress Bar
-        self.progress = ttk.Progressbar(self.master, orient='horizontal', 
-                                      mode='determinate')
-        self.progress.pack(fill='x', padx=20)
-
-        # Output Area
-        self.output_area = scrolledtext.ScrolledText(self.master, wrap=tk.WORD)
-        self.output_area.pack(pady=10, fill='both', expand=True, padx=20)
-        self.output_area.tag_config('question', font=('Helvetica', 10, 'bold'))
-        self.output_area.tag_config('answer', font=('Helvetica', 10))
-
-        # Status Bar
-        self.status_label = ttk.Label(self.master, text="Ready", 
-                                    relief=tk.SUNKEN, anchor=tk.W)
-        self.status_label.pack(fill='x', side=tk.BOTTOM)
-
-    def upload_pdf(self):
-        file_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-        if file_path:
-            self.file_label.config(text=file_path)
-            self.update_status("PDF uploaded")
-
-    def start_processing(self):
-        pdf_path = self.file_label.cget('text')
-        question = self.question_input.get()
-        
-        if not pdf_path or pdf_path == "No file selected":
-            self.update_status("Please upload a PDF first")
-            return
-        if not question.strip():
-            self.update_status("Please enter a question")
-            return
-
-        self.analyze_btn.config(state='disabled')
-        self.update_status("Processing...")
-        self.progress['value'] = 0
-
-        # Start processing in background thread
-        thread = threading.Thread(target=self.process_pdf, 
-                                args=(pdf_path, question))
-        thread.start()
-
-    def process_pdf(self, pdf_path, question):
+def handle_analysis(question):
+    """Handle the analysis process when user clicks the Analyze button"""
+    if not validate_inputs(question):
+        return
+    
+    with st.spinner("Processing your request..."):
+        tmp_path = None
         try:
-            self.queue.put(('progress', 10))
-            self.queue.put(('status', "Uploading PDF..."))
-            document_data = process_pdf(pdf_path)
+            # Create temporary PDF file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+                tmp_file.write(st.session_state.uploaded_file)
+                tmp_path = tmp_file.name
 
-            self.queue.put(('progress', 50))
-            self.queue.put(('status', "Analyzing content..."))
-            answer = ask_question(document_data, question)
+            # Process PDF and analyze content
+            with st.status("Analyzing document...", expanded=True) as status:
+                st.write("Extracting document content...")
+                document_data = process_pdf(tmp_path)
+                
+                st.write("Generating answer...")
+                answer = ask_question(document_data, question)
+                
+                status.update(label="Analysis complete!", state="complete")
 
-            self.queue.put(('output', question, answer))
-            self.queue.put(('progress', 100))
-            self.queue.put(('status', "Analysis complete"))
-            
+            # Store results
+            st.session_state.qa_list.append((question, answer))
+            st.rerun()
+
         except Exception as e:
-            self.queue.put(('error', str(e)))
+            st.error(f"An error occurred: {str(e)}")
         finally:
-            self.queue.put(('enable_btn',))
+            # Clean up temporary file
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
-    def check_queue(self):
-        try:
-            while True:
-                task = self.queue.get_nowait()
-                if task[0] == 'progress':
-                    self.progress['value'] = task[1]
-                elif task[0] == 'status':
-                    self.status_label.config(text=task[1])
-                elif task[0] == 'output':
-                    self.show_output(task[1], task[2])
-                elif task[0] == 'error':
-                    self.output_area.delete(1.0, tk.END)
-                    self.output_area.insert(tk.END, f"Error: {task[1]}", 'error')
-                    self.status_label.config(text="Error occurred")
-                elif task[0] == 'enable_btn':
-                    self.analyze_btn.config(state='normal')
-        except queue.Empty:
-            pass
-        self.master.after(100, self.check_queue)
+def validate_inputs(question):
+    """Validate user inputs before processing"""
+    if not st.session_state.uploaded_file:
+        st.error("Please upload a PDF file first")
+        return False
+    if not question.strip():
+        st.error("Please enter a valid question")
+        return False
+    return True
 
-    def show_output(self, question, answer):
-        self.output_area.delete(1.0, tk.END)
-        self.output_area.insert(tk.END, f"Question: {question}\n\n", 'question')
-        self.output_area.insert(tk.END, f"Answer: {answer}\n", 'answer')
-
-    def update_status(self, message):
-        self.status_label.config(text=message)
+def display_history():
+    """Display previous Q&A pairs"""
+    if st.session_state.qa_list:
+        st.divider()
+        st.subheader("Analysis History")
+        
+        for q, a in reversed(st.session_state.qa_list):
+            with st.expander(f"Q: {q}", expanded=True):
+                st.markdown(f"**A:** {a}")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = PDFAnalyzerApp(root)
-    root.mainloop()
+    main()
