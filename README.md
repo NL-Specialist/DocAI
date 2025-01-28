@@ -1,6 +1,7 @@
 # Automated Document Intelligence Pipeline
 
 **Advanced PDF processing system leveraging Google DocAI, Ollama and Deepseek 32B (free) / OpenAI (API costs) for structured data extraction and natural language Q&A**
+![UI Preview](https://raw.githubusercontent.com/NL-Specialist/DocAI/main/ui_screenshot.png)
 
 ## 🚀 Key Features
 - **Smart Document Processing**  
